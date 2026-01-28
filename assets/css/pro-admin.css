@@ -186,3 +186,62 @@
 .wprl-pro-wrap .notice{
   max-width: 1200px;
 }
+
+/* --- Free dashboard styling applied to Pro dashboard --- */
+.wprl-pro-wrap.wpranklab-wrap, .wprl-pro-wrap.wpranklab-wrap *{
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.wprl-pro-wrap .wprl-brand{
+  display:flex;
+  flex-wrap: wrap; /* keep brand on one row, but allow full-width blocks below */
+  align-items:center;
+  gap:12px;
+  margin: 8px 0 18px;
+}
+
+/* Force notices / alert controls to sit below the brand header (Free parity) */
+.wprl-pro-wrap .wprl-alert-area,
+.wprl-pro-wrap .wprl-brand > .notice,
+.wprl-pro-wrap .wprl-brand > form{
+  flex-basis: 100%;
+  width: 100%;
+}
+
+.wprl-pro-wrap .wprl-logo-text{
+  font-family: 'Lilita One', Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-size: 34px;
+  line-height: 1;
+  color: var(--wprl-yellow);
+  margin:0;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+
+.wprl-pro-wrap h1{
+  margin-top: 0;
+}
+
+.wprl-pro-wrap .notice{
+  margin: 12px 0;
+}
+
+/* Make Scan button match Free */
+.wprl-pro-wrap .button-primary{
+  background: var(--wprl-blue);
+  border-color: var(--wprl-blue);
+  box-shadow:none;
+  border-radius:4px;
+  padding: 6px 14px;
+}
+.wprl-pro-wrap .button-primary:hover,
+.wprl-pro-wrap .button-primary:focus{
+  background: var(--wprl-blue);
+  border-color: var(--wprl-blue);
+}
+
+/* Table styling similar to Free */
+.wprl-pro-wrap table.widefat{
+  border-radius: 6px;
+  overflow:hidden;
+}

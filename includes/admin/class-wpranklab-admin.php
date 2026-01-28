@@ -782,12 +782,27 @@ wp_enqueue_script(
         $scan_done  = isset( $_GET['wpranklab_scan_all'] ) && 'done' === $_GET['wpranklab_scan_all'];
         $scan_count = isset( $_GET['wpranklab_scan_count'] ) ? (int) $_GET['wpranklab_scan_count'] : 0;
         ?>
-        <div class="wrap wpranklab-wrap">
-            <?php $this->wpranklab_render_header('dashboard', __( 'Dashboard', 'wpranklab' )); ?>
+        <div class="wrap wpranklab-wrap wprl-pro-wrap">
+            <?php /* Free-style brand header */ ?>
+            <div class="wprl-brand">
+                <span class="wprl-mascot" aria-hidden="true">
+                    <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
+                        <circle cx="32" cy="32" r="30" fill="#E5F8FF"></circle>
+                        <path d="M20 26c0-6 5-11 12-11s12 5 12 11v14c0 6-5 11-12 11s-12-5-12-11V26z" fill="#19AEAD"></path>
+                        <path d="M25 28c0-3 3-6 7-6h0c4 0 7 3 7 6v1H25v-1z" fill="#177CD4"></path>
+                        <circle cx="28.5" cy="35" r="3" fill="#000"></circle>
+                        <circle cx="35.5" cy="35" r="3" fill="#000"></circle>
+                        <path d="M27 43c2 2 8 2 10 0" stroke="#000" stroke-width="2" stroke-linecap="round"></path>
+                        <path d="M32 8v6" stroke="#FB6A08" stroke-width="4" stroke-linecap="round"></path>
+                        <circle cx="32" cy="7" r="3" fill="#FEB201"></circle>
+                    </svg>
+                </span>
+                <h1 class="wprl-logo-text">WPRANKLAB</h1>
+            </div>
 
-            <h1><?php esc_html_e( 'WPRankLab – AI Visibility Overview', 'wpranklab' ); ?></h1>
-            
-            <?php
+	            <?php /* Alerts / notices area (kept outside the flex header) */ ?>
+	            <div class="wprl-alert-area">
+	            <?php
 if ( class_exists( 'WPRankLab_Batch_Scan' ) ) {
     $state = WPRankLab_Batch_Scan::get_instance()->get_state();
 
@@ -815,6 +830,7 @@ if ( class_exists( 'WPRankLab_Batch_Scan' ) ) {
     }
 }
 ?>
+	            </div>
             
 
             <?php if ( $scan_done ) : ?>
