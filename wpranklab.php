@@ -104,7 +104,6 @@ wpranklab_run();
  */
 function wpranklab_is_pro_active() {
     
-    return true;
     // Demo override (admin enabled, auto-expire)
     $settings = get_option( WPRANKLAB_OPTION_SETTINGS, array() );
     
