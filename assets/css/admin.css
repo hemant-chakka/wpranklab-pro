@@ -1,0 +1,91 @@
+/* WPRankLab admin styles placeholder */
+.wpranklab-license-notice { border-left: 4px solid #dc3232; }
+
+
+/* WPRankLab AI Visibility metabox */
+.wpranklab-meta-box {
+    font-size: 13px;
+}
+
+.wpranklab-score-badge {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.wpranklab-score-green {
+    background: #46b450;
+    color: #fff;
+}
+
+.wpranklab-score-orange {
+    background: #ffb900;
+    color: #23282d;
+}
+
+.wpranklab-score-red {
+    background: #dc3232;
+    color: #fff;
+}
+
+.wpranklab-score-neutral {
+    background: #ccd0d4;
+    color: #23282d;
+}
+
+.wpranklab-score-label {
+    margin: 4px 0 6px;
+}
+
+.wpranklab-last-run {
+    margin: 0 0 6px;
+    color: #666;
+}
+
+.wpranklab-metrics summary {
+    cursor: pointer;
+}
+
+.wpranklab-metrics ul {
+    margin: 4px 0 0 16px;
+    padding: 0;
+    list-style: disc;
+}
+
+.wpranklab-upgrade-hint {
+    margin-top: 8px;
+    border-top: 1px solid #eee;
+    padding-top: 8px;
+}
+
+
+.wpranklab-scan-message {
+    margin: 0 0 6px;
+    padding: 4px 6px;
+    background: #e7f7e7;
+    border-left: 3px solid #46b450;
+    font-size: 12px;
+}
+
+.wpranklab-meta-box ul { margin: 0 0 12px 18px; }
+.wpranklab-meta-box ul li { line-height: 1.4; }
+.wpranklab-meta-box h4 { margin-top: 16px; margin-bottom: 6px; font-size: 13px; }
+
+/* --- WPRankLab UI shell (demo-friendly) --- */
+.wpranklab-wrap{max-width:1100px;}
+.wpranklab-admin-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:14px 0 18px;}
+.wpranklab-admin-title h1{margin:0;line-height:1.2;font-size:23px;}
+.wpranklab-admin-title p{margin:6px 0 0;color:#646970;max-width:72ch;}
+.wpranklab-admin-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none;}
+.wpranklab-admin-nav a{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #dcdcde;border-radius:10px;background:#fff;text-decoration:none;color:#1d2327;}
+.wpranklab-admin-nav a:hover{background:#f6f7f7;}
+.wpranklab-admin-nav a.is-active{border-color:#2271b1;box-shadow:0 0 0 1px #2271b1 inset;}
+
+.wpranklab-card{background:#fff;border:1px solid #dcdcde;border-radius:14px;padding:14px 16px;margin:16px 0;}
+.wpranklab-card h2{margin-top:0;}
+.wpranklab-grid-2{display:grid;grid-template-columns:1fr;gap:16px;}
+@media (min-width:960px){.wpranklab-grid-2{grid-template-columns:1fr 1fr;}}
+
+.wpranklab-muted{color:#646970;}
