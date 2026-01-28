@@ -630,7 +630,24 @@ class WPRankLab_Admin {
             WPRANKLAB_VERSION
         );
 
-        wp_enqueue_script(
+        
+        if ( $is_wpranklab_screen ) {
+        wp_enqueue_style(
+                    'wpranklab-pro-fonts',
+                    'https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=Lilita+One&display=swap',
+                    array(),
+                    WPRANKLAB_VERSION
+                );
+        
+                wp_enqueue_style(
+                    'wpranklab-pro-admin',
+                    WPRANKLAB_PLUGIN_URL . 'assets/css/pro-admin.css',
+                    array( 'wpranklab-admin', 'wpranklab-pro-fonts' ),
+                    WPRANKLAB_VERSION
+                );
+        
+        }
+wp_enqueue_script(
             'wpranklab-admin',
             WPRANKLAB_PLUGIN_URL . 'assets/js/admin.js',
             array( 'jquery' ),
@@ -965,38 +982,60 @@ if ( class_exists( 'WPRankLab_Batch_Scan' ) ) {
     /**
      * License page.
      */
+    
+    /**
+     * License page (Pro) – Figma-aligned layout.
+     */
     public function render_license_page() {
         $this->license = get_option( WPRANKLAB_OPTION_LICENSE, array() );
         $status = isset( $this->license['status'] ) ? $this->license['status'] : 'inactive';
-        $has_key   = ! empty( $this->license['license_key'] );
-        $show_form = isset( $_GET['wpranklab_show_license_form'] ) && '1' === (string) sanitize_text_field( wp_unslash( $_GET['wpranklab_show_license_form'] ) );
-        ?>
-        <div class="wrap wpranklab-wrap">
-            <h1><?php esc_html_e( 'WPRankLab License', 'wpranklab' ); ?></h1>
+        $license_key = isset( $this->license['license_key'] ) ? (string) $this->license['license_key'] : '';
 
-            <?php
-            // Show success message when settings are saved.
-            if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] ) : ?>
+        $check_url = wp_nonce_url(
+            admin_url( 'admin-post.php?action=wpranklab_check_license' ),
+            'wpranklab_check_license'
+        );
+
+        $upgrade_url  = admin_url( 'admin.php?page=wpranklab-upgrade' );
+        $contact_url  = 'https://wpranklab.com/contact/';
+
+        ?>
+        <div class="wrap wprl-pro-wrap wprl-pro-license">
+            <div class="wprl-pro-brand">
+                <span class="wprl-pro-mascot" aria-hidden="true">
+                    <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="32" cy="32" r="30" fill="#E5F8FF"></circle>
+                        <path d="M20 26c0-6 5-11 12-11s12 5 12 11v14c0 6-5 11-12 11s-12-5-12-11V26z" fill="#19AEAD"></path>
+                        <path d="M25 28c0-3 3-6 7-6h0c4 0 7 3 7 6v1H25v-1z" fill="#177CD4"></path>
+                        <circle cx="28.5" cy="35" r="3" fill="#000"></circle>
+                        <circle cx="35.5" cy="35" r="3" fill="#000"></circle>
+                        <path d="M27 43c2 2 8 2 10 0" stroke="#000" stroke-width="2" stroke-linecap="round"></path>
+                        <path d="M32 8v6" stroke="#FB6A08" stroke-width="4" stroke-linecap="round"></path>
+                        <circle cx="32" cy="7" r="3" fill="#FEB201"></circle>
+                    </svg>
+                </span>
+                <h1 class="wprl-pro-wordmark">WPRANKLAB</h1>
+            </div>
+
+            <?php if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] ) : ?>
                 <div class="notice notice-success is-dismissible">
                     <p>
                         <?php esc_html_e( 'License settings saved.', 'wpranklab' ); ?>
                         <?php
-                        if ( ! empty( $this->license['license_key'] ) ) {
-                            printf(
-                                ' %s <strong>%s</strong>.',
-                                esc_html__( 'Current status:', 'wpranklab' ),
-                                esc_html( $status )
-                            );
-                        }
+                        printf(
+                            ' %s <strong>%s</strong>.',
+                            esc_html__( 'Current status:', 'wpranklab' ),
+                            esc_html( $status )
+                        );
                         ?>
                     </p>
                 </div>
             <?php endif; ?>
 
             <?php
-            // Show result of "Check License Now".
+            // Show result of "Check License Status".
             if ( isset( $_GET['wpranklab_check'] ) ) {
-                $check_code  = sanitize_text_field( wp_unslash( $_GET['wpranklab_check'] ) );
+                $check_code   = sanitize_text_field( wp_unslash( $_GET['wpranklab_check'] ) );
                 $check_status = isset( $_GET['wpranklab_status'] ) ? sanitize_text_field( wp_unslash( $_GET['wpranklab_status'] ) ) : $status;
 
                 if ( 'active' === $check_code ) : ?>
@@ -1041,148 +1080,86 @@ if ( class_exists( 'WPRankLab_Batch_Scan' ) ) {
             }
             ?>
 
-            <?php if ( ! $has_key && ! $show_form ) : ?>
-                <p><?php esc_html_e( 'You are on the Free plan. Free does not require a license key (Yoast-style).', 'wpranklab' ); ?></p>
-                <p>
-                    <a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=wpranklab-upgrade' ) ); ?>">
-                        <?php esc_html_e( 'Upgrade to Pro', 'wpranklab' ); ?>
-                    </a>
-                    <a class="button" href="<?php echo esc_url( add_query_arg( array( 'page' => 'wpranklab-license', 'wpranklab_show_license_form' => '1' ), admin_url( 'admin.php' ) ) ); ?>" style="margin-left:8px;">
-                        <?php esc_html_e( 'I have a license key', 'wpranklab' ); ?>
-                    </a>
-                </p>
-            <?php else : ?>
-                <p><?php esc_html_e( 'Enter your license key to activate WPRankLab Pro features.', 'wpranklab' ); ?></p>
-            <?php endif; ?>
+            <div class="wprl-pro-panel">
+                <div class="wprl-pro-grid">
+                    <div class="wprl-pro-col">
+                        <h2 class="wprl-pro-title"><?php esc_html_e( 'Activate your PRO Version', 'wpranklab' ); ?></h2>
 
-            <form method="post" action="options.php">
-                <?php
-                settings_fields( 'wpranklab_license_group' );
-                ?>
-                <table class="form-table">
-                    
-                   
-                  <?php  if ( ! wpranklab_should_show_license_form() ) : ?>
-    <p>
-        <?php esc_html_e( 'You are using the Free version of WPRankLab.', 'wpranklab' ); ?>
-    </p>
+                        <form method="post" action="options.php" class="wprl-pro-license-form">
+                            <?php settings_fields( 'wpranklab_license_group' ); ?>
 
-    <p>
-        <a href="https://your-upgrade-url"
-           class="button button-primary">
-            <?php esc_html_e( 'Upgrade to Pro', 'wpranklab' ); ?>
-        </a>
+                            <div class="wprl-field">
+                                <label for="wpranklab_license_key" class="wprl-label"><?php esc_html_e( 'License Key', 'wpranklab' ); ?></label>
+                                <input
+                                    type="text"
+                                    id="wpranklab_license_key"
+                                    name="<?php echo esc_attr( WPRANKLAB_OPTION_LICENSE ); ?>[license_key]"
+                                    value="<?php echo esc_attr( $license_key ); ?>"
+                                    class="wprl-input"
+                                    placeholder="XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                                />
+                            </div>
 
-        <button type="button"
-                class="button"
-                id="wpranklab-show-license-form">
-            <?php esc_html_e( 'I already have a license key', 'wpranklab' ); ?>
-        </button>
-    </p>
-<?php endif; ?>
-                   
-                   
-                   <?php if ( wpranklab_should_show_license_form() ) : ?> 
-                    <tr>
-                        <th scope="row">
-                            <label for="wpranklab_license_key"><?php esc_html_e( 'License Key', 'wpranklab' ); ?></label>
-                        </th>
-                        <td>
-                            <input type="text"
-                                   id="wpranklab_license_key"
-                                   name="<?php echo esc_attr( WPRANKLAB_OPTION_LICENSE ); ?>[license_key]"
-                                   value="<?php echo isset( $this->license['license_key'] ) ? esc_attr( $this->license['license_key'] ) : ''; ?>"
-                                   class="regular-text" />
-                            <?php if ( ! empty( $status ) ) : ?>
-                                <p class="description">
-                                    <?php
-                                    printf(
-                                        esc_html__( 'Current status: %s', 'wpranklab' ),
-                                        esc_html( $status )
-                                    );
-                                    ?>
-                                </p>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    
-                    <?php endif; ?>
-                
-                
-                </table>
+                            <div class="wprl-pro-actions">
+                                <a class="wprl-btn wprl-btn-outline" href="<?php echo esc_url( $check_url ); ?>">
+                                    <?php esc_html_e( 'Check License Status', 'wpranklab' ); ?>
+                                </a>
 
-                <?php submit_button( __( 'Save License', 'wpranklab' ) ); ?>
-            </form>
+                                <button type="submit" class="wprl-btn wprl-btn-teal">
+                                    <span class="dashicons dashicons-saved" aria-hidden="true"></span>
+                                    <?php esc_html_e( 'Save', 'wpranklab' ); ?>
+                                </button>
+                            </div>
 
-            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 10px;">
-                <?php wp_nonce_field( 'wpranklab_check_license' ); ?>
-                <input type="hidden" name="action" value="wpranklab_check_license" />
-                <?php submit_button( __( 'Check License Now', 'wpranklab' ), 'secondary', 'wpranklab_check_license_btn', false ); ?>
-            </form>
+                            <p class="wprl-pro-upgrade-line">
+                                <?php esc_html_e( "Don't have a license key yet?", 'wpranklab' ); ?>
+                                <a href="<?php echo esc_url( $upgrade_url ); ?>"><?php esc_html_e( 'Upgrade here', 'wpranklab' ); ?></a>
+                            </p>
 
-            <p><em><?php esc_html_e( 'License validation uses the configured license server endpoint. Pro features are only available while the license is active and not kill-switched.', 'wpranklab' ); ?></em></p>
+                            <p class="wprl-pro-status">
+                                <?php
+                                printf(
+                                    '%s <strong>%s</strong>',
+                                    esc_html__( 'Current status:', 'wpranklab' ),
+                                    esc_html( $status )
+                                );
+                                ?>
+                            </p>
+                        </form>
+                    </div>
+
+                    <div class="wprl-pro-col wprl-pro-help">
+                        <div class="wprl-pro-help-card">
+                            <div class="wprl-pro-help-brand">
+                                <span class="wprl-pro-mascot-sm" aria-hidden="true">
+                                    <svg width="34" height="34" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="32" cy="32" r="30" fill="#E5F8FF"></circle>
+                                        <path d="M20 26c0-6 5-11 12-11s12 5 12 11v14c0 6-5 11-12 11s-12-5-12-11V26z" fill="#19AEAD"></path>
+                                        <path d="M25 28c0-3 3-6 7-6h0c4 0 7 3 7 6v1H25v-1z" fill="#177CD4"></path>
+                                        <circle cx="28.5" cy="35" r="3" fill="#000"></circle>
+                                        <circle cx="35.5" cy="35" r="3" fill="#000"></circle>
+                                        <path d="M27 43c2 2 8 2 10 0" stroke="#000" stroke-width="2" stroke-linecap="round"></path>
+                                        <path d="M32 8v6" stroke="#FB6A08" stroke-width="4" stroke-linecap="round"></path>
+                                        <circle cx="32" cy="7" r="3" fill="#FEB201"></circle>
+                                    </svg>
+                                </span>
+                                <span class="wprl-pro-wordmark-sm">WPRANKLAB</span>
+                            </div>
+
+                            <h3 class="wprl-pro-help-title"><?php esc_html_e( 'Need Assistance?', 'wpranklab' ); ?></h3>
+                            <p class="wprl-pro-help-text">
+                                <?php esc_html_e( "If you have questions or run into issues, we're here to help. You can request support by visiting our contact page, just click the button below.", 'wpranklab' ); ?>
+                            </p>
+
+                            <a class="wprl-btn wprl-btn-yellow" href="<?php echo esc_url( $contact_url ); ?>" target="_blank" rel="noopener noreferrer">
+                                <?php esc_html_e( 'Contact WPRankLab', 'wpranklab' ); ?>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    
-    <?php // --- WPRankLab: reveal license form (Yoast-style) --- ?>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const btn = document.getElementById('wpranklab-show-license-form');
-    if (!btn) return;
-
-    btn.addEventListener('click', function () {
-        const data = new URLSearchParams();
-        data.append('action', 'wpranklab_show_license_form');
-        data.append('_wpnonce', '<?php echo wp_create_nonce('wpranklab_license_nonce'); ?>');
-
-        fetch(ajaxurl, {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: data
-        }).then(() => {
-            window.location.reload();
-        });
-    });
-});
-</script>
-<?php
-// --- end reveal license form ---
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-       
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+        <?php
     }
 
     /**

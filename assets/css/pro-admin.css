@@ -1,0 +1,188 @@
+/* Pro admin design system (scoped) */
+.wprl-pro-wrap {
+  --wprl-yellow: #FEB201;
+  --wprl-orange: #FB6A08;
+  --wprl-blue: #177CD4;
+  --wprl-teal: #19AEAD;
+  --wprl-lightblue: #E5F8FF;
+  --wprl-black: #000000;
+  --wprl-border: #E6E6E6;
+
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.wprl-pro-wrap a { text-decoration: none; }
+
+.wprl-pro-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin: 10px 0 18px;
+}
+
+.wprl-pro-wordmark{
+  margin:0;
+  font-family: 'Lilita One', Inter, sans-serif;
+  font-size: 34px;
+  letter-spacing: 1px;
+  color: var(--wprl-yellow);
+  line-height: 1;
+}
+
+.wprl-pro-panel{
+  background: #ffffff;
+  border: 1px solid var(--wprl-border);
+  border-radius: 14px;
+  padding: 26px 26px;
+  box-shadow: 0 8px 26px rgba(0,0,0,0.08);
+  max-width: 1200px;
+}
+
+.wprl-pro-grid{
+  display:grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 28px;
+  align-items:start;
+}
+
+@media (max-width: 1100px){
+  .wprl-pro-grid{ grid-template-columns: 1fr; }
+}
+
+.wprl-pro-title{
+  margin: 0 0 18px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--wprl-black);
+}
+
+.wprl-field{ margin-bottom: 14px; }
+
+.wprl-label{
+  display:block;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: var(--wprl-black);
+}
+
+.wprl-input{
+  width: 360px;
+  max-width: 100%;
+  height: 38px;
+  border-radius: 6px;
+  border: 1px solid #CFCFCF;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.wprl-pro-actions{
+  display:flex;
+  gap: 12px;
+  align-items:center;
+  margin: 12px 0 14px;
+  flex-wrap: wrap;
+}
+
+.wprl-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  border: 2px solid transparent;
+  box-sizing: border-box;
+}
+
+.wprl-btn-outline{
+  background: #fff;
+  border-color: #000;
+  color: #000;
+}
+
+.wprl-btn-teal{
+  background: var(--wprl-teal);
+  border-color: var(--wprl-teal);
+  color: #fff;
+}
+
+.wprl-btn-teal .dashicons{
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+}
+
+.wprl-btn-yellow{
+  background: var(--wprl-yellow);
+  border-color: var(--wprl-yellow);
+  color: #fff;
+  min-width: 220px;
+}
+
+.wprl-pro-upgrade-line{
+  margin: 6px 0 8px;
+  font-size: 14px;
+  color: #222;
+}
+
+.wprl-pro-upgrade-line a{
+  color: var(--wprl-blue);
+  font-weight: 600;
+}
+
+.wprl-pro-status{
+  margin: 0;
+  font-size: 14px;
+  color: #222;
+}
+
+.wprl-pro-help-card{
+  background: #fff;
+  border: 1px solid var(--wprl-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.10);
+  padding: 26px 26px 24px;
+  text-align:center;
+}
+
+.wprl-pro-help-brand{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.wprl-pro-wordmark-sm{
+  font-family: 'Lilita One', Inter, sans-serif;
+  font-size: 20px;
+  letter-spacing: 1px;
+  color: var(--wprl-yellow);
+}
+
+.wprl-pro-help-title{
+  margin: 10px 0 10px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #111;
+}
+
+.wprl-pro-help-text{
+  margin: 0 auto 18px;
+  max-width: 420px;
+  color: #444;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* Make WP notice widths align with panel */
+.wprl-pro-wrap .notice{
+  max-width: 1200px;
+}
