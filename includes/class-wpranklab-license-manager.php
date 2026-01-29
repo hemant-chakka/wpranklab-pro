@@ -265,6 +265,16 @@ class WPRankLab_License_Manager {
             return;
         }
 
+
+        // If we're on the main dashboard page, we render a custom banner there instead of a global admin notice.
+        $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+        if ( $screen && 'toplevel_page_wpranklab' === $screen->id ) {
+            // Still allow the "not activated" warning above when no key is entered.
+            if ( $kill || in_array( $status, array( 'expired', 'invalid', 'blocked' ), true ) ) {
+                return;
+            }
+        }
+
         // Kill switch or non-active status – show persistent large notice everywhere in admin.
         if ( $kill || in_array( $status, array( 'expired', 'invalid', 'blocked' ), true ) ) {
             $message = '';

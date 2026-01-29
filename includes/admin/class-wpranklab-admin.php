@@ -858,9 +858,54 @@ if ( class_exists( 'WPRankLab_Batch_Scan' ) ) {
                 </div>
             <?php endif; ?>
 
-            <p><?php esc_html_e( 'This dashboard will evolve to show your AI Visibility Score, trends, and top recommendations. For now you can trigger a full-site scan to populate scores for all posts and pages.', 'wpranklab' ); ?></p>
+            
+            <?php
+            // PRO: License expired banner (dashboard).
+            $license = get_option( WPRANKLAB_OPTION_LICENSE, array() );
+            $status  = isset( $license['status'] ) ? $license['status'] : 'inactive';
 
-            <?php if ( wpranklab_is_pro_active() ) : ?>
+            // Dev-only helper to simulate license states: ?wpranklab_force_license=expired
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG && isset( $_GET['wpranklab_force_license'] ) ) {
+                $forced = sanitize_key( wp_unslash( $_GET['wpranklab_force_license'] ) );
+                if ( in_array( $forced, array( 'expired', 'invalid', 'blocked' ), true ) ) {
+                    $status = $forced;
+                }
+            }
+
+            if ( 'expired' === $status ) :
+            ?>
+                <div class="wprl-expired-banner">
+                    <div class="wprl-expired-icon" aria-hidden="true">
+                        <svg width="54" height="54" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+    <path d="M32 10L56 52H8L32 10Z" fill="#FFFFFF"/>
+    <rect x="30.2" y="26" width="3.6" height="16" rx="1.8" fill="#FF3B30"/>
+    <circle cx="32" cy="47" r="2.8" fill="#FF3B30"/>
+</svg>
+                    </div>
+                    <div class="wprl-expired-body">
+                        <div class="wprl-expired-title"><?php esc_html_e( 'YOUR LICENSE HAS EXPIRED!', 'wpranklab' ); ?></div>
+                        <div class="wprl-expired-text">
+                            <?php
+                            printf(
+                                wp_kses(
+                                    __( 'Your WPRankLab licence has expired, <a href="%1$s" target="_blank" rel="noopener">click here</a> to renew or email support at <a href="mailto:%2$s">%2$s</a>', 'wpranklab' ),
+                                    array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) )
+                                ),
+                                esc_url( 'https://wpranklab.com/' ),
+                                esc_html( 'hello@wpranklab.com' )
+                            );
+                            ?>
+                        </div>
+                    </div>
+                    <a class="wprl-expired-cta" href="<?php echo esc_url( 'https://wpranklab.com/' ); ?>" target="_blank" rel="noopener">
+                        <?php esc_html_e( 'RENEW MY LICENSE NOW', 'wpranklab' ); ?>
+                    </a>
+                </div>
+            <?php endif; ?>
+
+<p><?php esc_html_e( 'This dashboard will evolve to show your AI Visibility Score, trends, and top recommendations. For now you can trigger a full-site scan to populate scores for all posts and pages.', 'wpranklab' ); ?></p>
+
+            <?php if ( wpranklab_is_pro_active() && 'expired' !== $status ) : ?>
                 <p><strong><?php esc_html_e( 'Pro license is active. Pro features will be enabled as they are implemented.', 'wpranklab' ); ?></strong></p>
             <?php else : ?>
                 <p><strong><?php esc_html_e( 'You are currently using the Free plan or your Pro license is not active.', 'wpranklab' ); ?></strong></p>
