@@ -37,6 +37,9 @@ class WPRankLab_History {
 
         // Hook weekly report event (already scheduled by activator).
         add_action( 'wpranklab_weekly_report', array( $this, 'handle_weekly_event' ) );
+        // Compatibility: legacy hook name used in some installs
+        add_action( 'wpranklab_weekly_event', array( $this, 'handle_weekly_event' ) );
+
         
         add_action( 'init', array( $this, 'ensure_weekly_event' ) );
         
@@ -223,14 +226,12 @@ class WPRankLab_History {
         }
         
 
-        $is_pro  = function_exists( 'wpranklab_is_pro_active' ) && wpranklab_is_pro_active();
-        $site    = get_bloginfo( 'name' );
-        $to      = get_option( 'admin_email' );
-        $subject = sprintf(
-            /* translators: %s: site name. */
-            __( 'Your Weekly AI Visibility Update — %s', 'wpranklab' ),
-            $site
-        );
+        $is_pro = function_exists( 'wpranklab_is_pro_active' ) && wpranklab_is_pro_active();
+        $site   = get_bloginfo( 'name' );
+        $to     = get_option( 'admin_email' );
+
+        // Match the client-facing subject line in the Figma designs / screenshots.
+        $subject = __( 'Your Weekly Stats Are Here', 'wpranklab' );
 
         $avg_score     = is_null( $snapshot['avg_score'] ) ? __( 'N/A', 'wpranklab' ) : round( $snapshot['avg_score'], 1 );
         $scanned_count = (int) $snapshot['scanned_count'];
@@ -260,33 +261,27 @@ class WPRankLab_History {
         }
 
         if ( ! $is_pro ) {
-            // Free email: simple.
+            // Free email (Pro plugin installed but license inactive): keep simple plain text.
             $body  = '';
-            $body .= sprintf( __( "Date: %s
-", 'wpranklab' ), $date );
-            $body .= sprintf( __( "AI Visibility Score: %s %s
-", 'wpranklab' ), $avg_score, $trend_arrow );
-            $body .= sprintf( __( "Scanned items: %d
-
-", 'wpranklab' ), $scanned_count );
+            $body .= sprintf( __( "Date: %s\n", 'wpranklab' ), $date );
+            $body .= sprintf( __( "AI Visibility Score: %s %s\n", 'wpranklab' ), $avg_score, $trend_arrow );
+            $body .= sprintf( __( "Scanned items: %d\n\n", 'wpranklab' ), $scanned_count );
             $body .= $trend_label . "\n\n";
             $body .= __( 'Upgrade to WPRankLab Pro to unlock full AI visibility insights, historical charts, and detailed recommendations.', 'wpranklab' ) . "\n";
             $body .= "https://wpranklab.com/\n";
         } else {
-            // Pro email: richer content (still plain text for now).
-            $body  = '';
-            $body .= sprintf( __( "Date: %s
-", 'wpranklab' ), $date );
-            $body .= sprintf( __( "AI Visibility Score: %s %s
-", 'wpranklab' ), $avg_score, $trend_arrow );
-            $body .= sprintf( __( "Scanned items: %d
-
-", 'wpranklab' ), $scanned_count );
-            $body .= $trend_label . "\n\n";
-            $body .= __( "In future versions, this email will also include:\n- Citation rank\n- AI / crawler visits\n- Detailed week summary\n- Top recommendations for next week\n", 'wpranklab' );
-            $body .= "\n";
-            $body .= __( 'Open your full AI Visibility report in WordPress:', 'wpranklab' ) . "\n";
-            $body .= admin_url( 'admin.php?page=wpranklab' ) . "\n";
+            // Pro email: HTML template aligned to the provided Figma frame.
+            $body = $this->build_pro_weekly_email_html(
+                array(
+                    'site_name'     => $site,
+                    'site_url'      => site_url(),
+                    'avg_score'     => $avg_score,
+                    'trend_arrow'   => $trend_arrow,
+                    'trend_label'   => $trend_label,
+                    'scanned_count' => $scanned_count,
+                    'dashboard_url' => admin_url( 'admin.php?page=wpranklab' ),
+                )
+            );
         }
 
         /**
@@ -303,7 +298,7 @@ class WPRankLab_History {
                 'subject' => $subject,
                 'body'    => $body,
                 'headers' => array(
-                    'Content-Type: text/plain; charset=UTF-8',
+                    ( $is_pro ? 'Content-Type: text/html; charset=UTF-8' : 'Content-Type: text/plain; charset=UTF-8' ),
                     'From: ' . get_bloginfo( 'name' ) . ' <' . get_option( 'admin_email' ) . '>',
                 ),
             ),
@@ -312,13 +307,134 @@ class WPRankLab_History {
         );
 
         if ( ! empty( $email['to'] ) && ! empty( $email['subject'] ) && ! empty( $email['body'] ) ) {
-            $headers = array(
-                'Content-Type: text/plain; charset=UTF-8',
-                'From: ' . get_bloginfo( 'name' ) . ' <' . get_option( 'admin_email' ) . '>',
-            );
-            
+            $headers = ! empty( $email['headers'] ) && is_array( $email['headers'] )
+                ? $email['headers']
+                : array(
+                    ( $is_pro ? 'Content-Type: text/html; charset=UTF-8' : 'Content-Type: text/plain; charset=UTF-8' ),
+                    'From: ' . get_bloginfo( 'name' ) . ' <' . get_option( 'admin_email' ) . '>',
+                );
+
             wp_mail( $email['to'], $email['subject'], $email['body'], $headers );
         }
+    }
+
+    /**
+     * Build the Pro weekly email HTML.
+     *
+     * NOTE: This is an email-safe, table-based layout with inline styles.
+     *
+     * @param array $data
+     *
+     * @return string
+     */
+    protected function build_pro_weekly_email_html( $data ) {
+        $site_name     = isset( $data['site_name'] ) ? $data['site_name'] : '';
+        $site_url      = isset( $data['site_url'] ) ? $data['site_url'] : '';
+        $avg_score     = isset( $data['avg_score'] ) ? $data['avg_score'] : '—';
+        $trend_arrow   = isset( $data['trend_arrow'] ) ? $data['trend_arrow'] : '';
+        $dashboard_url = isset( $data['dashboard_url'] ) ? $data['dashboard_url'] : '';
+
+        // Convert to percentage style used in the Figma comps.
+        $visibility_percent = ( is_numeric( $avg_score ) ? (int) round( (float) $avg_score ) . '%' : $avg_score );
+
+        // Pro-only metrics may not exist yet. Keep placeholders (matches current MVP behaviour).
+        $site_rank      = '—';
+        $ai_visits      = '—';
+        $crawler_visits = '—';
+
+                $yellow = '#FEB201';
+        $teal   = '#19AEAD';
+        $light  = '#E5F8FF';
+
+        // Email header (pure HTML/CSS – no external images, no CID embeds).
+        // This avoids broken images in Gmail/dev environments and keeps the header consistent.
+        $logo_html  = '<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">'
+            . '<tr>'
+            . '<td align="center" valign="middle" style="width:44px;height:44px;border-radius:999px;background:' . $light . '; font-family: Arial, sans-serif; font-size:28px; font-weight:900; color:' . $teal . '; line-height:44px;">W</td>'
+            . '<td style="padding-left:10px; font-family: Arial, sans-serif; font-size:28px; font-weight:900; letter-spacing:2px; color:' . $yellow . '; text-transform:uppercase;">WPRANKLAB</td>'
+            . '</tr>'
+            . '</table>';
+
+        $greeting = sprintf(
+            'Hi there, here are your weekly stats on <span style="font-weight:700; color:#000;">%s</span>',
+            esc_html( wp_parse_url( $site_url, PHP_URL_HOST ) ? wp_parse_url( $site_url, PHP_URL_HOST ) : $site_name )
+        );
+
+        $html  = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0; padding:0; background:#ffffff;">';
+        $html .= '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff;">';
+        $html .= '<tr><td align="center" style="padding: 24px 12px;">';
+
+        // Outer container.
+        $html .= '<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px; max-width:600px;">';
+
+        // Header (logo).
+        $html .= '<tr><td align="center" style="padding: 12px 0 6px;">' . $logo_html . '</td></tr>';
+
+        // Greeting line.
+        $html .= '<tr><td align="center" style="padding: 6px 0 18px; font-family: Arial, sans-serif; font-size: 14px; color:#6B7280;">' . $greeting . '</td></tr>';
+
+        // Yellow stats block.
+        $html .= '<tr><td align="center">'
+            . '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:' . $yellow . '; border-radius: 0px;">'
+            . '<tr><td align="center" style="padding: 28px 20px 24px; font-family: Arial, sans-serif;">'
+            . '<div style="font-size: 48px; line-height: 52px; font-weight: 900; color:#ffffff;">Your <span style="font-weight:900;">weekly</span> stats</div>'
+            . '</td></tr>';
+
+        // Cards row 1.
+        $html .= '<tr><td align="center" style="padding: 0 20px 14px;">'
+            . '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>'
+            . $this->email_stat_card( '👍', $visibility_percent, 'Visibility Score', 'Trend: ' . esc_html( $trend_arrow ) , $light )
+            . $this->email_stat_card( '👎', $site_rank, 'Site Rank', '', $light )
+            . '</tr></table>'
+            . '</td></tr>';
+
+        // Cards row 2.
+        $html .= '<tr><td align="center" style="padding: 0 20px 22px;">'
+            . '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>'
+            . $this->email_stat_card( '👍', $ai_visits, 'AI Visits', '', $light )
+            . $this->email_stat_card( '👎', $crawler_visits, 'Crawler Visits', '', $light )
+            . '</tr></table>'
+            . '</td></tr>';
+
+        // CTA.
+        $html .= '<tr><td align="center" style="padding: 0 20px 10px; font-family: Arial, sans-serif; font-size: 13px; color:#1f2937;">See the full reports on your website dashboard:</td></tr>';
+        $html .= '<tr><td align="center" style="padding: 0 20px 28px;">'
+            . '<a href="' . esc_url( $dashboard_url ) . '" style="display:inline-block; background:' . $teal . '; color:#ffffff; text-decoration:none; font-family: Arial, sans-serif; font-weight:700; font-size: 14px; padding: 12px 28px; border-radius: 4px;">Open Dashboard</a>'
+            . '</td></tr>';
+
+        $html .= '</table>'
+            . '</td></tr>';
+
+        // End container.
+        $html .= '</table>';
+        $html .= '</td></tr></table>';
+        $html .= '</body></html>';
+
+        return $html;
+    }
+
+    /**
+     * Render a single stat card as a table cell.
+     */
+    protected function email_stat_card( $icon, $value, $label, $sub, $bg ) {
+        $value = esc_html( $value );
+        $label = esc_html( $label );
+        $sub   = trim( (string) $sub );
+
+        $sub_html = '';
+        if ( '' !== $sub ) {
+            $sub_html = '<div style="font-size: 12px; color:#6B7280; margin-top: 4px;">' . esc_html( $sub ) . '</div>';
+        }
+
+        return '<td width="50%" align="center" style="padding: 10px;">'
+            . '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:' . esc_attr( $bg ) . '; border-radius: 14px;">'
+            . '<tr><td align="center" style="padding: 18px 10px; font-family: Arial, sans-serif;">'
+            . '<div style="font-size: 26px; line-height: 26px;">' . esc_html( $icon ) . '</div>'
+            . '<div style="font-size: 34px; line-height: 38px; font-weight: 900; color:#000; margin-top: 6px;">' . $value . '</div>'
+            . $sub_html
+            . '<div style="font-size: 14px; font-weight: 800; color:#000; margin-top: 6px;">' . $label . '</div>'
+            . '</td></tr></table>'
+            . '</td>';
     }
     
     /**
