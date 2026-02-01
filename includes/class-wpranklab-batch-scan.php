@@ -92,6 +92,7 @@ class WPRankLab_Batch_Scan {
             $queue = get_option( self::OPT_QUEUE, array() );
             if ( ! is_array( $queue ) || empty( $queue ) ) {
                 update_option( self::OPT_STATUS, 'complete', false );
+                set_transient( 'wpranklab_batch_complete_notice', 1, 60 );
                 return;
             }
             

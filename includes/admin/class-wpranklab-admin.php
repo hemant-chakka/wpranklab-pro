@@ -635,30 +635,29 @@ class WPRankLab_Admin {
             return;
         }
 
-        wp_enqueue_style(
-            'wpranklab-admin',
-            WPRANKLAB_PLUGIN_URL . 'assets/css/admin.css',
-            array(),
-            WPRANKLAB_VERSION
-        );
+		// Match Free: ensure the same font families + weights are available.
+		wp_enqueue_style(
+			'wpranklab-fonts',
+			'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lilita+One&display=swap',
+			array(),
+			WPRANKLAB_VERSION
+		);
 
-        
-        if ( $is_wpranklab_screen ) {
-        wp_enqueue_style(
-                    'wpranklab-pro-fonts',
-                    'https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=Lilita+One&display=swap',
-                    array(),
-                    WPRANKLAB_VERSION
-                );
-        
-                wp_enqueue_style(
-                    'wpranklab-pro-admin',
-                    WPRANKLAB_PLUGIN_URL . 'assets/css/pro-admin.css',
-                    array( 'wpranklab-admin', 'wpranklab-pro-fonts' ),
-                    WPRANKLAB_VERSION
-                );
-        
-        }
+		wp_enqueue_style(
+			'wpranklab-admin',
+			WPRANKLAB_PLUGIN_URL . 'assets/css/admin.css',
+			array( 'wpranklab-fonts' ),
+			WPRANKLAB_VERSION
+		);
+
+		if ( $is_wpranklab_screen ) {
+			wp_enqueue_style(
+				'wpranklab-pro-admin',
+				WPRANKLAB_PLUGIN_URL . 'assets/css/pro-admin.css',
+				array( 'wpranklab-admin' ),
+				WPRANKLAB_VERSION
+			);
+		}
 wp_enqueue_script(
             'wpranklab-admin',
             WPRANKLAB_PLUGIN_URL . 'assets/js/admin.js',
@@ -793,72 +792,74 @@ wp_enqueue_script(
     public function render_dashboard_page() {
         $scan_done  = isset( $_GET['wpranklab_scan_all'] ) && 'done' === $_GET['wpranklab_scan_all'];
         $scan_count = isset( $_GET['wpranklab_scan_count'] ) ? (int) $_GET['wpranklab_scan_count'] : 0;
+
+        // -------------------------------------------------------------
+        // Build batch scan alerts HTML (match Free: structure/placement/behavior)
+        // Custom classes (avoid WP admin notice behaviors).
+        // -------------------------------------------------------------
+        $wprl_alerts_html       = '';
+        $wprl_strip_batch_param = false;
+
+        if ( class_exists( 'WPRankLab_Batch_Scan' ) ) {
+            $scan  = WPRankLab_Batch_Scan::get_instance();
+            $state = is_object( $scan ) ? $scan->get_state() : array();
+
+            $status   = isset( $state['status'] ) ? (string) $state['status'] : 'idle';
+            $total    = isset( $state['total'] ) ? intval( $state['total'] ) : 0;
+            $progress = isset( $state['progress'] ) ? intval( $state['progress'] ) : 0;
+
+            $items_html = '';
+
+            // One-time "complete" notice (do not persist on refresh).
+            if ( 'complete' === $status && get_transient( 'wpranklab_batch_complete_notice' ) ) {
+                delete_transient( 'wpranklab_batch_complete_notice' );
+                $items_html .= '<div class="wprl-alert wprl-alert--success"><p>' . esc_html__( 'Batch scan complete.', 'wpranklab' ) . '</p></div>';
+            }
+
+            // One-time param-based notices.
+            if ( isset( $_GET['wpranklab_batch'] ) ) {
+                $flag = sanitize_text_field( wp_unslash( $_GET['wpranklab_batch'] ) );
+
+                if ( 'started' === $flag ) {
+                    $items_html .= '<div class="wprl-alert wprl-alert--success"><p>' . esc_html__( 'Batch scan started.', 'wpranklab' ) . '</p></div>';
+                    $wprl_strip_batch_param = true;
+                } elseif ( 'cancelled' === $flag ) {
+                    $items_html .= '<div class="wprl-alert wprl-alert--warning"><p>' . esc_html__( 'Batch scan cancelled.', 'wpranklab' ) . '</p></div>';
+                    $wprl_strip_batch_param = true;
+                }
+            }
+
+            // Running status (shows while the scan is actually running).
+            if ( 'running' === $status && $total > 0 ) {
+                $items_html .= '<div class="wprl-alert wprl-alert--info"><p>' . sprintf(
+                    esc_html__( 'Batch scan running: %1$d / %2$d scanned', 'wpranklab' ),
+                    intval( $progress ),
+                    intval( $total )
+                ) . '</p></div>';
+
+                $cancel_url = wp_nonce_url(
+                    admin_url( 'admin-post.php?action=wpranklab_cancel_batch_scan' ),
+                    'wpranklab_cancel_batch_scan'
+                );
+
+                $items_html .= '<p class="wprl-alert-actions"><a class="wprl-btn wprl-btn--secondary" href="' . esc_url( $cancel_url ) . '">' . esc_html__( 'Cancel Batch Scan', 'wpranklab' ) . '</a></p>';
+            }
+
+            if ( '' !== $items_html ) {
+                $wprl_alerts_html = '<div class="wprl-alert-area">' . $items_html . '</div>';
+
+                // Strip one-time query param so refresh does not re-show started/cancelled.
+                if ( $wprl_strip_batch_param ) {
+                    $wprl_alerts_html .= '<script>(function(){try{var u=new URL(window.location.href);u.searchParams.delete("wpranklab_batch");window.history.replaceState({},"",u.toString());}catch(e){}})();</script>';
+                }
+            }
+        }
         ?>
         <div class="wrap wpranklab-wrap wprl-pro-wrap">
-            <?php /* Free-style brand header */ ?>
             <div class="wprl-brand">
-                <span class="wprl-mascot" aria-hidden="true">
-                    <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
-                        <circle cx="32" cy="32" r="30" fill="#E5F8FF"></circle>
-                        <path d="M20 26c0-6 5-11 12-11s12 5 12 11v14c0 6-5 11-12 11s-12-5-12-11V26z" fill="#19AEAD"></path>
-                        <path d="M25 28c0-3 3-6 7-6h0c4 0 7 3 7 6v1H25v-1z" fill="#177CD4"></path>
-                        <circle cx="28.5" cy="35" r="3" fill="#000"></circle>
-                        <circle cx="35.5" cy="35" r="3" fill="#000"></circle>
-                        <path d="M27 43c2 2 8 2 10 0" stroke="#000" stroke-width="2" stroke-linecap="round"></path>
-                        <path d="M32 8v6" stroke="#FB6A08" stroke-width="4" stroke-linecap="round"></path>
-                        <circle cx="32" cy="7" r="3" fill="#FEB201"></circle>
-                    </svg>
-                </span>
-                <h1 class="wprl-logo-text">WPRANKLAB</h1>
+                <img class="wprl-logo-img" src="<?php echo esc_url( plugins_url( 'assets/img/wpranklab-brand-logo.webp', WPRANKLAB_PLUGIN_FILE ) ); ?>" alt="WPRANKLAB" />
             </div>
 
-	            <?php /* Alerts / notices area (kept outside the flex header) */ ?>
-	            <div class="wprl-alert-area">
-	            <?php
-if ( class_exists( 'WPRankLab_Batch_Scan' ) ) {
-    $state = WPRankLab_Batch_Scan::get_instance()->get_state();
-
-    if ( isset( $_GET['wpranklab_batch'] ) && 'started' === $_GET['wpranklab_batch'] ) {
-        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Batch scan started.', 'wpranklab' ) . '</p></div>';
-    } elseif ( isset( $_GET['wpranklab_batch'] ) && 'cancelled' === $_GET['wpranklab_batch'] ) {
-        echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html__( 'Batch scan cancelled.', 'wpranklab' ) . '</p></div>';
-    }
-
-    if ( 'running' === $state['status'] && $state['total'] > 0 ) {
-        echo '<div class="notice notice-info"><p>' .
-            esc_html( sprintf( 'Batch scan running: %d / %d scanned', (int) $state['progress'], (int) $state['total'] ) ) .
-            '</p></div>';
-
-        // Cancel button
-        ?>
-        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin: 10px 0 20px;">
-            <?php wp_nonce_field( 'wpranklab_cancel_batch_scan' ); ?>
-            <input type="hidden" name="action" value="wpranklab_cancel_batch_scan" />
-            <?php submit_button( __( 'Cancel Batch Scan', 'wpranklab' ), 'secondary', 'wpranklab_cancel_batch_btn', false ); ?>
-        </form>
-        <?php
-    } elseif ( 'complete' === $state['status'] ) {
-        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Batch scan complete.', 'wpranklab' ) . '</p></div>';
-    }
-}
-?>
-	            </div>
-            
-
-            <?php if ( $scan_done ) : ?>
-                <div class="notice notice-success is-dismissible">
-                    <p>
-                        <?php
-                        printf(
-                            esc_html__( 'AI Visibility scan completed for %d items.', 'wpranklab' ),
-                            $scan_count
-                        );
-                        ?>
-                    </p>
-                </div>
-            <?php endif; ?>
-
-            
             <?php
             // PRO: License expired banner (dashboard).
             $license = get_option( WPRANKLAB_OPTION_LICENSE, array() );
@@ -912,6 +913,10 @@ if ( class_exists( 'WPRankLab_Batch_Scan' ) ) {
             <?php endif; ?>
 
             <hr />
+
+            <?php if ( ! empty( $wprl_alerts_html ) ) { echo $wprl_alerts_html; } ?>
+
+                </div>
 
             <h2><?php esc_html_e( 'Scan All Content', 'wpranklab' ); ?></h2>
             <p><?php esc_html_e( 'Run an AI Visibility scan for all supported post types (posts and pages by default). This may take a moment on large sites.', 'wpranklab' ); ?></p>
@@ -1037,8 +1042,6 @@ if ( class_exists( 'WPRankLab_Batch_Scan' ) ) {
         $this->settings = get_option( WPRANKLAB_OPTION_SETTINGS, array() );
         ?>
         <div class="wrap wpranklab-wrap">
-            <?php $this->wpranklab_render_header('settings', __( 'Settings', 'wpranklab' )); ?>
-
             <h1><?php esc_html_e( 'WPRankLab Settings', 'wpranklab' ); ?></h1>
 
             <form method="post" action="options.php">
@@ -1074,21 +1077,9 @@ if ( class_exists( 'WPRankLab_Batch_Scan' ) ) {
 
         ?>
         <div class="wrap wprl-pro-wrap wprl-pro-license">
-            <div class="wprl-pro-brand">
-                <span class="wprl-pro-mascot" aria-hidden="true">
-                    <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="32" cy="32" r="30" fill="#E5F8FF"></circle>
-                        <path d="M20 26c0-6 5-11 12-11s12 5 12 11v14c0 6-5 11-12 11s-12-5-12-11V26z" fill="#19AEAD"></path>
-                        <path d="M25 28c0-3 3-6 7-6h0c4 0 7 3 7 6v1H25v-1z" fill="#177CD4"></path>
-                        <circle cx="28.5" cy="35" r="3" fill="#000"></circle>
-                        <circle cx="35.5" cy="35" r="3" fill="#000"></circle>
-                        <path d="M27 43c2 2 8 2 10 0" stroke="#000" stroke-width="2" stroke-linecap="round"></path>
-                        <path d="M32 8v6" stroke="#FB6A08" stroke-width="4" stroke-linecap="round"></path>
-                        <circle cx="32" cy="7" r="3" fill="#FEB201"></circle>
-                    </svg>
-                </span>
-                <h1 class="wprl-pro-wordmark">WPRANKLAB</h1>
-            </div>
+            <div class="wprl-brand">
+    <img class="wprl-logo-img" src="<?php echo esc_url( WPRANKLAB_PLUGIN_URL . 'assets/img/wpranklab-brand-logo.webp' ); ?>" alt="<?php esc_attr_e( 'WPRANKLAB', 'wpranklab' ); ?>" />
+</div>
 
             <?php if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] ) : ?>
                 <div class="notice notice-success is-dismissible">
@@ -1204,19 +1195,7 @@ if ( class_exists( 'WPRankLab_Batch_Scan' ) ) {
                     <div class="wprl-pro-col wprl-pro-help">
                         <div class="wprl-pro-help-card">
                             <div class="wprl-pro-help-brand">
-                                <span class="wprl-pro-mascot-sm" aria-hidden="true">
-                                    <svg width="34" height="34" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <circle cx="32" cy="32" r="30" fill="#E5F8FF"></circle>
-                                        <path d="M20 26c0-6 5-11 12-11s12 5 12 11v14c0 6-5 11-12 11s-12-5-12-11V26z" fill="#19AEAD"></path>
-                                        <path d="M25 28c0-3 3-6 7-6h0c4 0 7 3 7 6v1H25v-1z" fill="#177CD4"></path>
-                                        <circle cx="28.5" cy="35" r="3" fill="#000"></circle>
-                                        <circle cx="35.5" cy="35" r="3" fill="#000"></circle>
-                                        <path d="M27 43c2 2 8 2 10 0" stroke="#000" stroke-width="2" stroke-linecap="round"></path>
-                                        <path d="M32 8v6" stroke="#FB6A08" stroke-width="4" stroke-linecap="round"></path>
-                                        <circle cx="32" cy="7" r="3" fill="#FEB201"></circle>
-                                    </svg>
-                                </span>
-                                <span class="wprl-pro-wordmark-sm">WPRANKLAB</span>
+                                <img class="wprl-logo-img" src="<?php echo esc_url( plugins_url( 'assets/img/wpranklab-brand-logo.webp', WPRANKLAB_PLUGIN_FILE ) ); ?>" alt="WPRANKLAB" />
                             </div>
 
                             <h3 class="wprl-pro-help-title"><?php esc_html_e( 'Need Assistance?', 'wpranklab' ); ?></h3>
@@ -3083,21 +3062,9 @@ if ( ! $is_pro ) {
             echo '<div class="wrap wpranklab-wrap wprl-pro-wrap wprl-wizard-wrap">';
 
             // Brand header (already styled in pro-admin.css)
-            echo '  <div class="wprl-brand">';
-            echo '    <span class="wprl-mascot" aria-hidden="true">';
-            echo '      <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">'
-                . '        <circle cx="32" cy="32" r="30" fill="#E5F8FF"></circle>'
-                . '        <path d="M20 26c0-6 5-11 12-11s12 5 12 11v14c0 6-5 11-12 11s-12-5-12-11V26z" fill="#19AEAD"></path>'
-                . '        <path d="M25 28c0-3 3-6 7-6h0c4 0 7 3 7 6v1H25v-1z" fill="#177CD4"></path>'
-                . '        <circle cx="28.5" cy="35" r="3" fill="#000"></circle>'
-                . '        <circle cx="35.5" cy="35" r="3" fill="#000"></circle>'
-                . '        <path d="M27 43c2 2 8 2 10 0" stroke="#000" stroke-width="2" stroke-linecap="round"></path>'
-                . '        <path d="M32 8v6" stroke="#FB6A08" stroke-width="4" stroke-linecap="round"></path>'
-                . '        <circle cx="32" cy="7" r="3" fill="#FEB201"></circle>'
-                . '      </svg>';
-            echo '    </span>';
-            echo '    <h1 class="wprl-logo-text">WPRANKLAB</h1>';
-            echo '  </div>';
+	            echo '  <div class="wprl-brand">';
+	            echo '    <img class="wprl-logo-img" src="' . esc_url( plugins_url( 'assets/img/wpranklab-brand-logo.webp', WPRANKLAB_PLUGIN_FILE ) ) . '" alt="WPRANKLAB" />';
+	            echo '  </div>';
 
             // Stepper
             echo '  <div class="wprl-wizard-top">';
