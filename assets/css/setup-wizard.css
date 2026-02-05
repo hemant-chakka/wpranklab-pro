@@ -1,0 +1,105 @@
+
+/* Pixel-match shell */
+.wprl-wiz-container{max-width:1180px;margin:28px auto 40px;}
+.wprl-wiz-logo{display:flex;align-items:center;gap:12px;margin:0 0 18px;}
+.wprl-wiz-logo img{height:44px;width:auto}
+.wprl-wiz-bg{background:#f3f4f6;padding:0 0 0;}
+.wprl-wiz-progress{position:relative;margin:0 0 18px;padding:22px 0 0;}
+.wprl-wiz-progress-line{position:absolute;left:32px;right:32px;top:44px;height:2px;background:#cfd6dd;}
+.wprl-wiz-progress-line-fill{position:absolute;left:32px;top:44px;height:2px;background:#f59e0b;width:0;}
+.wprl-wiz-steps{display:flex;justify-content:space-between;gap:18px;list-style:none;margin:0;padding:0 18px;}
+.wprl-wiz-step{position:relative;flex:1;text-align:center;min-width:160px}
+.wprl-wiz-step .dot{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:#e5e7eb;border:2px solid #cfd6dd;color:#6b7280;font-weight:700;}
+.wprl-wiz-step.done .dot{background:#f59e0b;border-color:#f59e0b;color:#fff}
+.wprl-wiz-step.current .dot{background:#fff;border-color:#f59e0b;color:#f59e0b}
+.wprl-wiz-step .label{display:block;margin-top:10px;font-size:13px;letter-spacing:.08em;color:#9ca3af;font-weight:600}
+.wprl-wiz-step.current .label{color:#111827}
+.wprl-wiz-step.done .label{color:#9ca3af}
+
+.wprl-wiz-card{border:2px solid #111827;background:#fff;border-radius:4px;padding:22px;margin-top:8px}
+.wprl-wiz-card-inner{display:grid;grid-template-columns:1.6fr 1fr;gap:34px;align-items:start}
+.wprl-wiz-titleRow{display:flex;align-items:flex-start;gap:14px;margin-bottom:8px}
+.wprl-wiz-num{width:42px;height:42px;border-radius:999px;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex:0 0 auto}
+.wprl-wiz-h1{margin:0;font-size:22px;font-weight:800;color:#111827}
+.wprl-wiz-desc{margin:6px 0 18px;color:#374151;font-size:13px;max-width:640px}
+
+.wprl-field{margin:0 0 16px}
+.wprl-field label{display:block;font-size:12px;font-weight:700;color:#111827;margin:0 0 6px}
+.wprl-field input[type=text],.wprl-field input[type=password],.wprl-field input[type=email],.wprl-field input[type=number],.wprl-field select{
+  width:100%;max-width:560px;background:#efefef;border:1px solid #efefef;border-radius:0;padding:12px 12px;font-size:14px;
+}
+.wprl-field input[type=checkbox]{transform:scale(1.05)}
+.wprl-wiz-btnbar{margin-top:24px}
+.wprl-wiz-next{
+  width:100%;max-width:100%;display:block;background:#0ea5a6;border:none;border-radius:3px;color:#fff;
+  padding:16px 18px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;font-size:12px;text-align:center;cursor:pointer;
+}
+.wprl-wiz-next:hover{filter:brightness(.98)}
+.wprl-pro-box{background:#fff;border-radius:6px;box-shadow:0 8px 18px rgba(0,0,0,.12);padding:18px;text-align:center;border:1px solid #e5e7eb}
+.wprl-pro-box img{height:30px;width:auto;margin-bottom:10px}
+.wprl-pro-box .t{font-weight:800;margin:8px 0 6px}
+.wprl-pro-box .p{font-size:11px;color:#374151;line-height:1.5;margin:0 0 12px}
+.wprl-pro-box .btn{display:inline-block;background:#f59e0b;color:#fff;padding:8px 14px;border-radius:4px;font-weight:800;text-decoration:none;font-size:11px}
+
+.wprl-scan-btn{display:inline-block;background:#f59e0b;color:#fff;border:none;border-radius:4px;padding:12px 18px;font-weight:800;cursor:pointer;min-width:200px}
+.wprl-progressbar{height:44px;border-radius:4px;background:#4b5563;overflow:hidden;max-width:640px;margin:18px 0 10px}
+.wprl-progressbar > div{height:100%;background:#64e65b;width:0}
+.wprl-progress-text{font-weight:900;letter-spacing:.04em;margin-top:6px}
+
+.wprl-finish{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px}
+.wprl-finish img{max-width:220px;height:auto;margin:10px 0 18px}
+.wprl-finish p{font-size:18px;font-weight:800;color:#111827;text-align:center;line-height:1.25;margin:0 0 20px}
+.wprl-go{width:100%;max-width:720px;background:#0ea5a6;color:#fff;border:none;border-radius:3px;padding:18px;font-weight:900;letter-spacing:.18em;text-transform:uppercase}
+
+
+/* Success CTA centering */
+.wprl-finish .wprl-go{
+  display:block;
+  max-width:520px;
+  margin:24px auto 0;
+  text-align:center;
+}
+
+
+/* Pro wizard right-side help card */
+.wprl-help-box{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:22px 22px 20px;
+  box-shadow:0 10px 25px rgba(0,0,0,.08);
+  text-align:center;
+  max-width:420px;
+  margin-left:auto;
+}
+.wprl-help-box img{
+  max-width:180px;
+  height:auto;
+  margin: 0 auto 10px;
+  display:block;
+}
+.wprl-help-box .t{
+  font-size:20px;
+  font-weight:800;
+  margin: 6px 0 10px;
+  color:#111827;
+}
+.wprl-help-box .p{
+  font-size:13px;
+  line-height:1.6;
+  color:#4b5563;
+  margin: 0 0 16px;
+}
+.wprl-help-box .btn{
+  display:inline-block;
+  background:#f2a900;
+  color:#fff;
+  padding:10px 18px;
+  border-radius:8px;
+  text-decoration:none;
+  font-weight:700;
+  font-size:13px;
+}
+.wprl-help-box .btn:hover{
+  opacity:.92;
+}

@@ -145,3 +145,17 @@ function wpranklab_require_pro() {
 }
 
 
+
+
+// Setup Wizard bootstrap
+if ( is_admin() ) {
+    require_once WPRANKLAB_PLUGIN_DIR . 'includes/setup-wizard/class-wprl-setup-wizard.php';
+    ( new WPRL_Setup_Wizard() )->init();
+}
+
+
+function wprl_on_activate() {
+    update_option('wprl_setup_complete', 0);
+    set_transient('wprl_do_setup_redirect', true, 30);
+}
+register_activation_hook( __FILE__, 'wprl_on_activate' );
