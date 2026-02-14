@@ -1059,7 +1059,7 @@ wp_enqueue_script(
         $this->settings = get_option( WPRANKLAB_OPTION_SETTINGS, array() );
         ?>
         <div class="wrap wpranklab-wrap">
-            <?php $this->wpranklab_render_header('settings', __( 'Settings', 'wpranklab' )); ?>
+            <?php //$this->wpranklab_render_header('settings', __( 'Settings', 'wpranklab' )); ?>
 
             <h1><?php esc_html_e( 'WPRankLab Settings', 'wpranklab' ); ?></h1>
 
