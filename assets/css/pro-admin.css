@@ -571,3 +571,10 @@
   .wprl-expired-banner{ flex-wrap: wrap; }
   .wprl-expired-cta{ width: 100%; text-align:center; }
 }
+
+
+/* License page: use brand logo in help card */
+.wprl-pro-license .wprl-pro-help-logo-img{
+  max-width: 160px;
+  height: auto;
+}

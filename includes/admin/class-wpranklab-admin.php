@@ -551,15 +551,7 @@ class WPRankLab_Admin {
      * Remote validation is handled separately by the License Manager (cron/manual).
      */
     public function sanitize_license( $input ) {
-        // IMPORTANT:
-        // This option is updated by both the Settings API (this method) and the remote
-        // "Check License Status" flow. Do NOT wipe fields added by the remote check
-        // (e.g., last_raw, last_error, last_message, last_result, etc.).
-        // Always start from the latest saved value.
-        $output = get_option( WPRANKLAB_OPTION_LICENSE, array() );
-        if ( ! is_array( $output ) ) {
-            $output = array();
-        }
+        $output = $this->license;
 
         $current_key = isset( $this->license['license_key'] ) ? $this->license['license_key'] : '';
         $new_key = isset( $input['license_key'] ) ? sanitize_text_field( $input['license_key'] ) : '';
@@ -572,9 +564,6 @@ class WPRankLab_Admin {
             $output['bound_domain']       = '';
             $output['kill_switch_active'] = 0;
             $output['last_check']         = 0;
-
-            // Clear remote-check diagnostics on key change.
-            unset( $output['last_error'], $output['last_message'], $output['last_raw'], $output['last_result'], $output['last_status_raw'] );
         }
 
         return $output;
@@ -1096,20 +1085,8 @@ wp_enqueue_script(
 
         ?>
         <div class="wrap wprl-pro-wrap wprl-pro-license">
-            <div class="wprl-pro-brand">
-                <span class="wprl-pro-mascot" aria-hidden="true">
-                    <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="32" cy="32" r="30" fill="#E5F8FF"></circle>
-                        <path d="M20 26c0-6 5-11 12-11s12 5 12 11v14c0 6-5 11-12 11s-12-5-12-11V26z" fill="#19AEAD"></path>
-                        <path d="M25 28c0-3 3-6 7-6h0c4 0 7 3 7 6v1H25v-1z" fill="#177CD4"></path>
-                        <circle cx="28.5" cy="35" r="3" fill="#000"></circle>
-                        <circle cx="35.5" cy="35" r="3" fill="#000"></circle>
-                        <path d="M27 43c2 2 8 2 10 0" stroke="#000" stroke-width="2" stroke-linecap="round"></path>
-                        <path d="M32 8v6" stroke="#FB6A08" stroke-width="4" stroke-linecap="round"></path>
-                        <circle cx="32" cy="7" r="3" fill="#FEB201"></circle>
-                    </svg>
-                </span>
-                <h1 class="wprl-pro-wordmark">WPRANKLAB</h1>
+            <div class="wprl-brand">
+                <img class="wprl-logo-img" src="<?php echo esc_url( plugins_url( 'assets/img/wpranklab-brand-logo.webp', WPRANKLAB_PLUGIN_FILE ) ); ?>" alt="WPRANKLAB" />
             </div>
 
             <?php if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] ) : ?>
@@ -1226,19 +1203,7 @@ wp_enqueue_script(
                     <div class="wprl-pro-col wprl-pro-help">
                         <div class="wprl-pro-help-card">
                             <div class="wprl-pro-help-brand">
-                                <span class="wprl-pro-mascot-sm" aria-hidden="true">
-                                    <svg width="34" height="34" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <circle cx="32" cy="32" r="30" fill="#E5F8FF"></circle>
-                                        <path d="M20 26c0-6 5-11 12-11s12 5 12 11v14c0 6-5 11-12 11s-12-5-12-11V26z" fill="#19AEAD"></path>
-                                        <path d="M25 28c0-3 3-6 7-6h0c4 0 7 3 7 6v1H25v-1z" fill="#177CD4"></path>
-                                        <circle cx="28.5" cy="35" r="3" fill="#000"></circle>
-                                        <circle cx="35.5" cy="35" r="3" fill="#000"></circle>
-                                        <path d="M27 43c2 2 8 2 10 0" stroke="#000" stroke-width="2" stroke-linecap="round"></path>
-                                        <path d="M32 8v6" stroke="#FB6A08" stroke-width="4" stroke-linecap="round"></path>
-                                        <circle cx="32" cy="7" r="3" fill="#FEB201"></circle>
-                                    </svg>
-                                </span>
-                                <span class="wprl-pro-wordmark-sm">WPRANKLAB</span>
+                                <img class="wprl-logo-img wprl-pro-help-logo-img" src="<?php echo esc_url( plugins_url( 'assets/img/wpranklab-brand-logo.webp', WPRANKLAB_PLUGIN_FILE ) ); ?>" alt="WPRANKLAB" />
                             </div>
 
                             <h3 class="wprl-pro-help-title"><?php esc_html_e( 'Need Assistance?', 'wpranklab' ); ?></h3>
