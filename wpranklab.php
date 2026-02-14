@@ -26,7 +26,9 @@ require_once WPRANKLAB_PLUGIN_DIR . 'includes/class-wpranklab-ai.php';
 require_once WPRANKLAB_PLUGIN_DIR . 'includes/class-wpranklab-history.php';
 
 // License server base (stub – can be updated later).
-define( 'WPRANKLAB_LICENSE_API_BASE', 'http://wpranklab.com' );
+define( 'WPRANKLAB_LICENSE_API_BASE', 'https://wpranklab.com' );
+// Software License Manager (SLM) API base.
+define( 'WPRANKLAB_SLM_API_URL', WPRANKLAB_LICENSE_API_BASE . '/' );
 
 // Stub endpoints – update these when real endpoints exist.
 define( 'WPRANKLAB_LICENSE_VALIDATE_ENDPOINT', WPRANKLAB_LICENSE_API_BASE . '/api/license/validate' );
@@ -35,7 +37,7 @@ define( 'WPRANKLAB_LICENSE_DEACTIVATE_ENDPOINT', WPRANKLAB_LICENSE_API_BASE . '/
 
 // Option keys.
 define( 'WPRANKLAB_OPTION_SETTINGS', 'wpranklab_settings' );
-define( 'WPRANKLAB_OPTION_LICENSE',  'wpranklab_license' );
+define( 'WPRANKLAB_OPTION_LICENSE',  'wpranklab_pro_license' );
 
 // Custom DB tables (names will be prefixed at runtime).
 define( 'WPRANKLAB_TABLE_HISTORY',   'wpranklab_visibility_history' );

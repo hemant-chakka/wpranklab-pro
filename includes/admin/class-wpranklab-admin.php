@@ -551,7 +551,15 @@ class WPRankLab_Admin {
      * Remote validation is handled separately by the License Manager (cron/manual).
      */
     public function sanitize_license( $input ) {
-        $output = $this->license;
+        // IMPORTANT:
+        // This option is updated by both the Settings API (this method) and the remote
+        // "Check License Status" flow. Do NOT wipe fields added by the remote check
+        // (e.g., last_raw, last_error, last_message, last_result, etc.).
+        // Always start from the latest saved value.
+        $output = get_option( WPRANKLAB_OPTION_LICENSE, array() );
+        if ( ! is_array( $output ) ) {
+            $output = array();
+        }
 
         $current_key = isset( $this->license['license_key'] ) ? $this->license['license_key'] : '';
         $new_key = isset( $input['license_key'] ) ? sanitize_text_field( $input['license_key'] ) : '';
@@ -564,6 +572,9 @@ class WPRankLab_Admin {
             $output['bound_domain']       = '';
             $output['kill_switch_active'] = 0;
             $output['last_check']         = 0;
+
+            // Clear remote-check diagnostics on key change.
+            unset( $output['last_error'], $output['last_message'], $output['last_raw'], $output['last_result'], $output['last_status_raw'] );
         }
 
         return $output;

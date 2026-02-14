@@ -178,7 +178,7 @@ class WPRankLab_License_Manager {
     public function validate_license( $force = true ) {
         $license = $this->license;
 
-        $now = time();
+        $now        = time();
         $last_check = isset( $license['last_check'] ) ? (int) $license['last_check'] : 0;
 
         // If not forcing and last check was within 12 hours, skip.
@@ -187,49 +187,180 @@ class WPRankLab_License_Manager {
         }
 
         if ( empty( $license['license_key'] ) ) {
+            // No key: don't mutate status on background checks.
             return $license;
         }
 
-        $body = array(
-            'license_key' => $license['license_key'],
-            'site_url'    => home_url(),
-            'version'     => WPRANKLAB_VERSION,
-        );
+        $license_key = trim( (string) $license['license_key'] );
 
-        $response = wp_remote_post(
-            WPRANKLAB_LICENSE_VALIDATE_ENDPOINT,
-            array(
-                'timeout' => 15,
-                'body'    => $body,
-            )
+        // Determine domain for SLM "registered_domain".
+        $registered_domain = wp_parse_url( home_url(), PHP_URL_HOST );
+        if ( empty( $registered_domain ) ) {
+            $registered_domain = home_url();
+        }
+
+        // Secret key is configured in Software License Manager settings on wpranklab.com.
+        // Prefer a wp-config constant, else allow a filter.
+        $secret_key = '';
+        if ( defined( 'WPRANKLAB_SLM_SECRET_KEY' ) ) {
+            $secret_key = (string) WPRANKLAB_SLM_SECRET_KEY;
+        }
+        $secret_key = apply_filters( 'wpranklab_slm_secret_key', $secret_key );
+
+        // Item reference should match the Product Name / Item Reference in SLM.
+        $item_reference = defined( 'WPRANKLAB_SLM_ITEM_REFERENCE' ) ? (string) WPRANKLAB_SLM_ITEM_REFERENCE : 'WPRankLab Pro';
+        $item_reference = apply_filters( 'wpranklab_slm_item_reference', $item_reference );
+
+        $base_url = defined( 'WPRANKLAB_SLM_API_URL' ) ? WPRANKLAB_SLM_API_URL : ( defined( 'WPRANKLAB_LICENSE_API_BASE' ) ? trailingslashit( WPRANKLAB_LICENSE_API_BASE ) : home_url( '/' ) );
+
+        // 1) Check status.
+        $args = array(
+            'slm_action'        => 'slm_check',
+            'license_key'       => $license_key,
+            'registered_domain' => $registered_domain,
+            'item_reference'    => $item_reference,
         );
+        if ( ! empty( $secret_key ) ) {
+            $args['secret_key'] = $secret_key;
+        }
+
+        $url      = add_query_arg( $args, $base_url );
+        $response = wp_remote_get( $url, array( 'timeout' => 20 ) );
+
+        $license['last_check'] = $now;
 
         if ( is_wp_error( $response ) ) {
-            // On error, keep existing status but update last_check.
-            $license['last_check'] = $now;
+            // Keep existing status on transport error; record message.
+            $license['last_error'] = $response->get_error_message();
             update_option( WPRANKLAB_OPTION_LICENSE, $license );
             $this->license = $license;
-
             return $license;
         }
 
-        $code = wp_remote_retrieve_response_code( $response );
-        $data = json_decode( wp_remote_retrieve_body( $response ), true );
+        $code = (int) wp_remote_retrieve_response_code( $response );
+        $body = (string) wp_remote_retrieve_body( $response );
 
+        // Always store last raw response for debugging (trimmed).
+        $license['last_raw'] = substr( $body, 0, 4000 );
+
+        $data = json_decode( $body, true );
         if ( 200 !== $code || ! is_array( $data ) ) {
-            $license['last_check'] = $now;
+            // Keep existing status if response isn't parseable.
+            $license['last_error'] = 'Bad response from license server (HTTP ' . $code . ').';
             update_option( WPRANKLAB_OPTION_LICENSE, $license );
             $this->license = $license;
-
             return $license;
         }
 
-        $license['status']          = isset( $data['status'] ) ? sanitize_text_field( $data['status'] ) : 'invalid';
-        $license['expires_at']      = isset( $data['expires_at'] ) ? sanitize_text_field( $data['expires_at'] ) : '';
-        $license['allowed_version'] = isset( $data['allowed_version'] ) ? sanitize_text_field( $data['allowed_version'] ) : '';
-        $license['bound_domain']    = isset( $data['domain'] ) ? sanitize_text_field( $data['domain'] ) : '';
+        // Normalize SLM fields.
+        $result  = isset( $data['result'] ) ? sanitize_text_field( $data['result'] ) : '';
+        $status  = isset( $data['status'] ) ? sanitize_text_field( $data['status'] ) : '';
+        $message = isset( $data['message'] ) ? sanitize_text_field( $data['message'] ) : '';
+
+        // Some SLM setups return "license_status" instead of "status".
+        if ( empty( $status ) && isset( $data['license_status'] ) ) {
+            $status = sanitize_text_field( $data['license_status'] );
+        }
+        // Additional fallbacks seen in some SLM customizations.
+        if ( empty( $status ) ) {
+            foreach ( array( 'lic_status', 'status_code', 'licenseState', 'state' ) as $k ) {
+                if ( isset( $data[ $k ] ) && is_scalar( $data[ $k ] ) ) {
+                    $status = sanitize_text_field( $data[ $k ] );
+                    break;
+                }
+            }
+        }
+
+        $license['last_result'] = $result;
+        $license['last_status_raw'] = $status;
+
+        // Some SLM responses use "success" / "error".
+        // We treat ACTIVE only when status == active.
+        $normalized = 'invalid';
+        if ( 'active' === strtolower( $status ) ) {
+            $normalized = 'active';
+        } elseif ( in_array( strtolower( $status ), array( 'expired', 'blocked', 'inactive' ), true ) ) {
+            $normalized = strtolower( $status );
+        } elseif ( 'success' === strtolower( $result ) && ! empty( $status ) ) {
+            // Fallback: trust explicit status.
+            $normalized = strtolower( $status );
+        } elseif ( 'error' === strtolower( $result ) ) {
+            $normalized = 'invalid';
+        }
+
+        $license['status']      = $normalized;
+        $license['last_error']  = '';
+        $license['last_message']= $message;
+        // Keep last_raw on success for debugging
+
+        // Optional values if present.
+        if ( isset( $data['expire_date'] ) ) {
+            $license['expires_at'] = sanitize_text_field( $data['expire_date'] );
+        } elseif ( isset( $data['expires_at'] ) ) {
+            $license['expires_at'] = sanitize_text_field( $data['expires_at'] );
+        }
+
+        // Kill switch: only allow server-driven kill switch via a custom field.
         $license['kill_switch_active'] = ! empty( $data['kill_switch'] ) ? 1 : 0;
-        $license['last_check']      = $now;
+
+        // 2) If license is valid but not activated for this domain, try activation once.
+        // Many SLM installs include "registered_domains" or domain-related messages.
+        $needs_activation = false;
+        if ( 'active' === $license['status'] ) {
+            if ( isset( $data['registered_domains'] ) && is_array( $data['registered_domains'] ) ) {
+                $domains = array();
+                foreach ( $data['registered_domains'] as $d ) {
+                    // Some SLM responses may include nested arrays; only accept scalars.
+                    if ( is_scalar( $d ) ) {
+                        $domains[] = strtolower( trim( (string) $d ) );
+                    } elseif ( is_array( $d ) && isset( $d['registered_domain'] ) && is_scalar( $d['registered_domain'] ) ) {
+                        $domains[] = strtolower( trim( (string) $d['registered_domain'] ) );
+                    }
+                }
+                $domains = array_filter( array_unique( $domains ) );
+
+                if ( ! in_array( strtolower( $registered_domain ), $domains, true ) ) {
+                    $needs_activation = true;
+                }
+            } elseif ( isset( $data['registered_domain'] ) ) {
+                $rd = strtolower( trim( (string) $data['registered_domain'] ) );
+                if ( $rd && $rd !== strtolower( $registered_domain ) ) {
+                    $needs_activation = true;
+                }
+            } elseif ( $message && false !== stripos( $message, 'not activated' ) ) {
+                $needs_activation = true;
+            }
+        }
+
+        if ( $needs_activation ) {
+            $act_args = array(
+                'slm_action'        => 'slm_activate',
+                'license_key'       => $license_key,
+                'registered_domain' => $registered_domain,
+                'item_reference'    => $item_reference,
+            );
+            if ( ! empty( $secret_key ) ) {
+                $act_args['secret_key'] = $secret_key;
+            }
+            $act_url  = add_query_arg( $act_args, $base_url );
+            $act_resp = wp_remote_get( $act_url, array( 'timeout' => 20 ) );
+
+            if ( ! is_wp_error( $act_resp ) && 200 === (int) wp_remote_retrieve_response_code( $act_resp ) ) {
+                $act_body = (string) wp_remote_retrieve_body( $act_resp );
+                $act_data = json_decode( $act_body, true );
+                if ( is_array( $act_data ) ) {
+                    $act_result = isset( $act_data['result'] ) ? strtolower( sanitize_text_field( $act_data['result'] ) ) : '';
+                    $act_status = isset( $act_data['status'] ) ? strtolower( sanitize_text_field( $act_data['status'] ) ) : '';
+                    if ( 'success' === $act_result && 'active' === $act_status ) {
+                        $license['status'] = 'active';
+                        $license['last_message'] = isset( $act_data['message'] ) ? sanitize_text_field( $act_data['message'] ) : $license['last_message'];
+                    } else {
+                        // Activation failed; store message but don't lie about activation.
+                        $license['last_message'] = isset( $act_data['message'] ) ? sanitize_text_field( $act_data['message'] ) : $license['last_message'];
+                    }
+                }
+            }
+        }
 
         update_option( WPRANKLAB_OPTION_LICENSE, $license );
         $this->license = $license;
